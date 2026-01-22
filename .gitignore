@@ -22,5 +22,7 @@ src/config/user_config.json
 # Data & Reports
 data/
 *.csv
+# Ignore reports but keep templates
 *.html
+!src/assets/*.html
 *.xlsx

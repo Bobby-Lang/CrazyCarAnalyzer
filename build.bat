@@ -51,7 +51,7 @@ if exist *.spec del /q *.spec
 :: Run build
 pyinstaller --noconfirm --onefile --windowed ^
     --name "CrazyCarAnalyzer" ^
-    --icon "src/assets/app.ico" ^
+    --icon "src/assets/icon.ico" ^
     --add-data "src/assets;src/assets" ^
     --collect-all "ddddocr" ^
     --collect-all "customtkinter" ^

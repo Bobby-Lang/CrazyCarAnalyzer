@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>比赛复盘看板</title>
+    <script src="echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans SC', 'Microsoft YaHei', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; padding: 30px; }
+        .container { max-width: 1800px; margin: 0 auto; }
+        .card { background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%); border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); margin-bottom: 25px; overflow: hidden; }
+        .header-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 25px; margin-bottom: 25px; }
+        .header-title-box { position: relative; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; height: 180px; box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4); }
+        .main-title { font-size: 52px; font-weight: 900; letter-spacing: 3px; }
+        .sub-title { font-size: 20px; margin-top: 10px; opacity: 0.95; letter-spacing: 1px; }
+        .score-box { display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 20px; height: 180px; position: relative; }
+        .score-box.red { background: linear-gradient(145deg, #ff6b6b 0%, #dc2626 100%); box-shadow: 0 15px 35px rgba(220, 38, 38, 0.4); color: white; }
+        .score-box.blue { background: linear-gradient(145deg, #60a5fa 0%, #2563eb 100%); box-shadow: 0 15px 35px rgba(37, 99, 235, 0.4); color: white; }
+        .score-box.winner { transform: scale(1.05); box-shadow: 0 25px 50px rgba(255, 215, 0, 0.4); border: 3px solid #ffd700; }
+        .score-box.winner::before { content: '👑'; position: absolute; top: 15px; right: 20px; font-size: 32px; animation: bounce 1s ease infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .score-label { font-size: 16px; font-weight: 600; margin-bottom: 8px; opacity: 0.95; }
+        .score-num { font-size: 68px; font-weight: 900; line-height: 1; font-family: 'Arial Black', sans-serif; }
+        .middle-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 2fr; gap: 25px; margin-bottom: 25px; }
+        .grid-item { padding: 20px; border-radius: 20px; display: flex; flex-direction: column; }
+        .grid-item.pie-bg { background: linear-gradient(145deg, #fef2f2 0%, #fee2e2 100%); box-shadow: 0 10px 30px rgba(239, 68, 68, 0.12); }
+        .grid-item.bar-bg { background: linear-gradient(145deg, #eff6ff 0%, #dbeafe 100%); box-shadow: 0 10px 30px rgba(59, 130, 246, 0.12); }
+        .chart-title { font-size: 16px; font-weight: 700; text-align: center; color: #1e293b; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid rgba(0,0,0,0.08); }
+        .chart-box { flex: 1; width: 100%; min-height: 260px; }
+        .mvp-section { display: flex; flex-direction: column; gap: 18px; }
+        .mvp-card { flex: 1; border-radius: 18px; padding: 22px 18px; text-align: center; position: relative; overflow: hidden; }
+        .mvp-card.gold { 
+            background: 
+                linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, transparent 50%),
+                linear-gradient(225deg, rgba(245, 158, 11, 0.08) 0%, transparent 50%),
+                linear-gradient(145deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%); 
+            box-shadow: 0 8px 25px rgba(251, 191, 36, 0.3); 
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-top: 4px solid #f59e0b;
+        }
+        .mvp-card.gold::before {
+            content: '';
+            position: absolute;
+            top: -80px;
+            right: -80px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(251, 191, 36, 0.12) 0%, transparent 60%);
+        }
+        .mvp-card.gold::after {
+            content: '🏆 MVP';
+            position: absolute;
+            bottom: 8px;
+            right: 15px;
+            font-size: 56px;
+            font-weight: 900;
+            color: rgba(245, 158, 11, 0.1);
+            letter-spacing: 2px;
+            pointer-events: none;
+        }
+        .mvp-card.silver { 
+            background: 
+                linear-gradient(135deg, rgba(148, 163, 184, 0.08) 0%, transparent 50%),
+                linear-gradient(225deg, rgba(148, 163, 184, 0.08) 0%, transparent 50%),
+                linear-gradient(145deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%); 
+            box-shadow: 0 8px 25px rgba(148, 163, 184, 0.3); 
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-top: 4px solid #94a3b8;
+        }
+        .mvp-card.silver::before {
+            content: '';
+            position: absolute;
+            top: -80px;
+            left: -80px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(148, 163, 184, 0.12) 0%, transparent 60%);
+        }
+        .mvp-card.silver::after {
+            content: '🛡️ FMVP';
+            position: absolute;
+            bottom: 8px;
+            right: 15px;
+            font-size: 56px;
+            font-weight: 900;
+            color: rgba(148, 163, 184, 0.1);
+            letter-spacing: 2px;
+            pointer-events: none;
+        }
+        .mvp-role { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .mvp-name { font-size: 24px; font-weight: 800; color: #1e293b; margin-bottom: 10px; }
+        .mvp-detail { font-size: 14px; color: #475569; background: rgba(255,255,255,0.95); padding: 8px 16px; border-radius: 20px; font-weight: 600; line-height: 1.6; display: inline-block; }
+        .table-item { padding: 0; overflow: hidden; background: linear-gradient(145deg, #fafafa 0%, #f4f4f5 100%); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+        thead th { background: linear-gradient(135deg, #374151 0%, #1f2937 100%); color: #fff; padding: 14px 8px; font-weight: 600; position: sticky; top: 0; z-index: 5; font-size: 11px; letter-spacing: 0.5px; }
+        td { padding: 12px 8px; text-align: center; border-bottom: 1px solid #e5e7eb; color: #374151; font-weight: 500; }
+        tbody tr:nth-child(even) { background: rgba(0,0,0,0.02); }
+        tbody tr:hover { background: rgba(102, 126, 234, 0.08); }
+        .team-badge { color: white; padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: 700; min-width: 36px; display: inline-block; }
+        .bg-red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .bg-blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .player-name { font-weight: 700; color: #1f2937; text-align: left; padding-left: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .total-score { font-weight: 800; color: #6366f1; font-size: 15px; }
+        .dynamic-charts-area { display: flex; flex-direction: column; gap: 25px; }
+        .chart-row { padding: 25px; background: linear-gradient(145deg, #fafafa 0%, #f5f5f5 100%); border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        .chart-header { font-size: 20px; font-weight: 800; color: #1f2937; margin-bottom: 18px; padding-left: 12px; border-left: 4px solid #6366f1; }
+        .echart-box { width: 100%; height: 350px; }
+        @media (max-width: 1400px) {
+            .middle-grid { grid-template-columns: 1fr 1fr; }
+            .header-row { grid-template-columns: 1fr; }
+            .score-box { height: 120px; }
+            .score-num { font-size: 52px; }
+        }
+        /* Watermark for Date Box */
+        .header-watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            font-size: 50px;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.15);
+            letter-spacing: 12px;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 0;
+            width: 100%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-row">
+            <div class="header-title-box">
+                <div style="text-align:center; position: relative; z-index: 1;">
+                    <div class="main-title">{DATE}</div>
+                    <div class="sub-title">{CAR} • {MODE}</div>
+                </div>
+                <div class="header-watermark">新手学堂</div>
+            </div>
+            <div class="score-box red {RED_CLS}">
+                <div class="score-label">红队总胜场</div>
+                <div class="score-num">{R_WINS}</div>
+            </div>
+            <div class="score-box blue {BLUE_CLS}">
+                <div class="score-label">蓝队总胜场</div>
+                <div class="score-num">{B_WINS}</div>
+            </div>
+        </div>
+
+        <div class="middle-grid">
+            <div class="grid-item pie-bg">
+                <div class="chart-title">红蓝总分对比</div>
+                <div id="donutChart" class="chart-box"></div>
+            </div>
+            <div class="grid-item bar-bg">
+                <div class="chart-title">阶段胜场对比</div>
+                <div id="barChart" class="chart-box"></div>
+            </div>
+            <div class="mvp-section">
+                <div class="mvp-card gold">
+                    <div class="mvp-role">🏆 MVP</div>
+                    <div class="mvp-name">{MVP_N}</div>
+                    <div class="mvp-detail">得分 {MVP_S} • 冠军 {MVP_1} 次</div>
+                </div>
+                <div class="mvp-card silver">
+                    <div class="mvp-role">🛡️ FMVP</div>
+                    <div class="mvp-name">{FMVP_N}</div>
+                    <div class="mvp-detail">得分 {FMVP_S} • 冠军 {FMVP_1} 次</div>
+                </div>
+            </div>
+            <div class="grid-item table-item">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:120px;">选手</th>
+                            <th style="width:60px;">队伍</th>
+                            <th>1st</th><th>2nd</th><th>3rd</th><th>4th</th><th>5th</th><th>6th</th><th>7th</th><th>8th</th>
+                            <th style="width:50px;">场次</th>
+                            <th style="width:60px;">总分</th>
+                        </tr>
+                    </thead>
+                    <tbody>{ROWS}</tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="dynamic-charts-area">
+            {DYNAMIC_CHARTS_HTML}
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            initCharts();
+        };
+        
+        function initCharts() {
+            if (typeof echarts === 'undefined') {
+                document.getElementById('donutChart').innerHTML = '<div style="text-align:center;padding:50px;color:#666;">ECharts加载失败</div>';
+                return;
+            }
+            
+            var r_score = {R_SCORE};
+            var b_score = {B_SCORE};
+            var bar_categories = {BAR_CATS};
+            var bar_r_data = {BAR_R};
+            var bar_b_data = {BAR_B};
+            
+            // 饼图 - 填充式显示
+            var donutChart = echarts.init(document.getElementById('donutChart'));
+            donutChart.setOption({
+                color: ['#ef4444', '#3b82f6'],
+                tooltip: { 
+                    trigger: 'item', 
+                    formatter: function(params) {
+                        return params.name + '<br/>得分: ' + params.value + ' (' + params.percent + '%)';
+                    },
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#e5e7eb',
+                    borderWidth: 1,
+                    textStyle: { color: '#1f2937' }
+                },
+                legend: { 
+                    bottom: '3%', 
+                    icon: 'circle',
+                    textStyle: { color: '#374151', fontSize: 13, fontWeight: 600 }
+                },
+                series: [{
+                    name: '总分',
+                    type: 'pie',
+                    radius: ['35%', '72%'],
+                    center: ['50%', '45%'],
+                    avoidLabelOverlap: true,
+                    itemStyle: {
+                        borderRadius: 8,
+                        borderColor: '#fff',
+                        borderWidth: 3
+                    },
+                    label: {
+                        show: true,
+                        position: 'inside',
+                        formatter: '{d}%',
+                        fontSize: 22,
+                        fontWeight: 800,
+                        color: '#ffffff',
+                        textShadowColor: 'rgba(0,0,0,0.7)',
+                        textShadowBlur: 8,
+                        textShadowOffsetX: 2,
+                        textShadowOffsetY: 2
+                    },
+                    labelLine: { show: false },
+                    data: [
+                        { value: r_score, name: '红队' },
+                        { value: b_score, name: '蓝队' }
+                    ]
+                }]
+            });
+            
+            // 柱状图
+            var barChart = echarts.init(document.getElementById('barChart'));
+            barChart.setOption({
+                tooltip: { 
+                    trigger: 'axis', 
+                    axisPointer: { type: 'shadow' },
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    borderColor: '#e5e7eb',
+                    borderWidth: 1,
+                    textStyle: { color: '#1f2937' }
+                },
+                legend: { bottom: '0%', textStyle: { color: '#374151', fontSize: 12 } },
+                grid: { top: '12%', left: '10%', right: '10%', bottom: '18%' },
+                xAxis: { 
+                    type: 'category', 
+                    data: bar_categories,
+                    axisLabel: { fontSize: 11, color: '#6b7280' },
+                    axisLine: { lineStyle: { color: '#e5e7eb' } }
+                },
+                yAxis: { 
+                    type: 'value', 
+                    minInterval: 1,
+                    splitLine: { lineStyle: { type: 'dashed', color: '#e5e7eb' } },
+                    axisLabel: { color: '#6b7280' }
+                },
+                series: [
+                    { 
+                        name: '红队', 
+                        type: 'bar', 
+                        data: bar_r_data, 
+                        itemStyle: { 
+                            color: '#ef4444', 
+                            borderRadius: [6, 6, 0, 0] 
+                        },
+                        label: { show: true, position: 'top', color: '#ef4444', fontSize: 11, fontWeight: 600 }
+                    },
+                    { 
+                        name: '蓝队', 
+                        type: 'bar', 
+                        data: bar_b_data, 
+                        itemStyle: { 
+                            color: '#3b82f6', 
+                            borderRadius: [6, 6, 0, 0] 
+                        },
+                        label: { show: true, position: 'top', color: '#3b82f6', fontSize: 11, fontWeight: 600 }
+                    }
+                ]
+            });
+            
+            // 走势图
+            var all_charts_data = {ALL_CHARTS_DATA};
+            all_charts_data.forEach(function(item, index) {
+                var chart = echarts.init(document.getElementById('chart_dynamic_' + index));
+                chart.setOption({
+                    tooltip: { 
+                        trigger: 'axis',
+                        backgroundColor: 'rgba(255,255,255,0.95)',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        textStyle: { color: '#1f2937' }
+                    },
+                    legend: { data: ['红队', '蓝队'], right: 20, top: 0, textStyle: { color: '#374151', fontSize: 12 } },
+                    grid: { left: '45', right: '45', bottom: '35', top: '45', containLabel: true },
+                    xAxis: { 
+                        type: 'category', 
+                        boundaryGap: false, 
+                        data: item.maps, 
+                        axisLabel: { interval: 0, rotate: 30, fontSize: 10, color: '#6b7280' },
+                        axisLine: { lineStyle: { color: '#e5e7eb' } }
+                    },
+                    yAxis: { 
+                        type: 'value', 
+                        splitLine: { lineStyle: { type: 'dashed', color: '#e5e7eb' } },
+                        axisLabel: { color: '#6b7280' }
+                    },
+                    series: [
+                        { 
+                            name: '红队', 
+                            type: 'line', 
+                            data: item.red, 
+                            smooth: true, 
+                            symbolSize: 8,
+                            symbol: 'circle',
+                            lineStyle: { color: '#ef4444', width: 3 },
+                            itemStyle: { color: '#ef4444' },
+                            areaStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                    { offset: 0, color: 'rgba(239, 68, 68, 0.2)' },
+                                    { offset: 1, color: 'rgba(239, 68, 68, 0)' }
+                                ])
+                            },
+                            label: { show: true, position: 'top', color: '#ef4444', fontSize: 10, fontWeight: 600 }
+                        },
+                        { 
+                            name: '蓝队', 
+                            type: 'line', 
+                            data: item.blue, 
+                            smooth: true, 
+                            symbolSize: 8,
+                            symbol: 'circle',
+                            lineStyle: { color: '#3b82f6', width: 3 },
+                            itemStyle: { color: '#3b82f6' },
+                            areaStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                    { offset: 0, color: 'rgba(59, 130, 246, 0.2)' },
+                                    { offset: 1, color: 'rgba(59, 130, 246, 0)' }
+                                ])
+                            },
+                            label: { show: true, position: 'bottom', color: '#3b82f6', fontSize: 10, fontWeight: 600 }
+                        }
+                    ]
+                });
+            });
+            
+            window.addEventListener('resize', function() {
+                donutChart.resize();
+                barChart.resize();
+                all_charts_data.forEach(function(item, index) {
+                    var chart = echarts.getInstanceByDom(document.getElementById('chart_dynamic_' + index));
+                    if (chart) chart.resize();
+                });
+            });
+        }
+    </script>
+</body>
+</html>
