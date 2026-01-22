@@ -41,7 +41,11 @@ class App(ctk.CTk):
         
         # Version Info
         self.version_label = ctk.CTkLabel(self.sidebar_frame, text="v1.0.0", text_color="gray")
-        self.version_label.grid(row=6, column=0, padx=20, pady=20)
+        self.version_label.grid(row=6, column=0, padx=20, pady=(20, 5))
+        
+        # Credits
+        self.credits_label = ctk.CTkLabel(self.sidebar_frame, text="Powered by 新手o↘.小狼ヾ", font=("Microsoft YaHei UI", 10), text_color="gray50")
+        self.credits_label.grid(row=7, column=0, padx=20, pady=(0, 20))
 
         # 2. Content Area
         self.frames = {}

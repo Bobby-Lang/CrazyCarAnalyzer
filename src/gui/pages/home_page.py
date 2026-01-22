@@ -1,4 +1,6 @@
 import customtkinter as ctk
+import tkinter as tk
+from tkinter import ttk
 import threading
 import queue
 import webbrowser
@@ -38,34 +40,27 @@ class HomePage(ctk.CTkFrame):
         self.mode_menu.pack(side="right")
         ctk.CTkLabel(r1, text="模式:").pack(side="right", padx=5)
 
-        # Row 2: Maps Selection
+        # Row 2: Maps Selection (使用 ttk.Combobox 支持滚轮)
         r2 = ctk.CTkFrame(self.ctrl_frame, fg_color="transparent")
         r2.pack(fill="x", padx=10, pady=5)
         
-        # End Map (Start Trigger)
-        ctk.CTkLabel(r2, text="结束地图 (最新):").pack(side="left")
-        self.end_map_var = ctk.StringVar(value="")
-        # Add empty option for "Immediate"
+        # 配置 ttk 样式以匹配暗色主题
+        style = ttk.Style()
+        style.configure("TCombobox", padding=5)
+        
+        # End Map
+        ctk.CTkLabel(r2, text="结束地图:").pack(side="left")
+        self.end_map_var = tk.StringVar(value="(不限制/直接开始)")
         map_opts = ["(不限制/直接开始)"] + OFFICIAL_MAP_ORDER
-        self.end_map_menu = ctk.CTkOptionMenu(r2, values=map_opts, variable=self.end_map_var)
+        self.end_map_menu = ttk.Combobox(r2, textvariable=self.end_map_var, values=map_opts, width=20, state="readonly")
         self.end_map_menu.pack(side="left", padx=10)
         
-        # Start Map (Stop Trigger)
-        ctk.CTkLabel(r2, text="起始地图 (最旧):").pack(side="left", padx=(20, 0))
-        self.start_map_var = ctk.StringVar(value=OFFICIAL_MAP_ORDER[0])
-        self.start_map_menu = ctk.CTkComboBox(r2, values=OFFICIAL_MAP_ORDER, variable=self.start_map_var)
+        # Start Map
+        ctk.CTkLabel(r2, text="起始地图:").pack(side="left", padx=(20, 0))
+        self.start_map_var = tk.StringVar(value=OFFICIAL_MAP_ORDER[0])
+        self.start_map_menu = ttk.Combobox(r2, textvariable=self.start_map_var, values=OFFICIAL_MAP_ORDER, width=20, state="readonly")
         self.start_map_menu.pack(side="left", padx=10)
         
-        self.add_map_btn = ctk.CTkButton(r2, text="+ 添加备选", width=80, command=self.add_start_map)
-        self.add_map_btn.pack(side="left")
-
-        # Start Maps List Display
-        self.start_maps = [OFFICIAL_MAP_ORDER[0]]
-        self.maps_display = ctk.CTkTextbox(self.ctrl_frame, height=40, fg_color="transparent", text_color="gray")
-        self.maps_display.pack(fill="x", padx=10, pady=5)
-        self.maps_display.insert("1.0", f"停止条件(遇到即停): {self.start_maps}")
-        self.maps_display.configure(state="disabled")
-
         # Row 3: Action
         r3 = ctk.CTkFrame(self.ctrl_frame, fg_color="transparent")
         r3.pack(fill="x", padx=10, pady=10)
@@ -90,18 +85,6 @@ class HomePage(ctk.CTkFrame):
             self.acc_label.configure(text=f"当前账号: {acc['phone']}")
         else:
             self.acc_label.configure(text="当前账号: 未登录 (请前往账号页设置)")
-
-    def add_start_map(self):
-        val = self.start_map_var.get()
-        if val not in self.start_maps:
-            self.start_maps.append(val)
-            self.update_maps_display()
-
-    def update_maps_display(self):
-        self.maps_display.configure(state="normal")
-        self.maps_display.delete("1.0", "end")
-        self.maps_display.insert("1.0", f"停止条件(遇到即停): {self.start_maps}")
-        self.maps_display.configure(state="disabled")
 
     def log(self, msg):
         self.log_queue.put(msg)
@@ -148,8 +131,12 @@ class HomePage(ctk.CTkFrame):
             
             mode = self.mode_var.get()
             
+            # Start map logic: just take the value from ComboBox
+            start_map_val = self.start_map_var.get()
+            start_maps = [start_map_val]
+            
             # Scrape
-            header, data = scraper.start_crawl(mode, self.start_maps, end_map, self.config_manager.get("substitution_map"))
+            header, data = scraper.start_crawl(mode, start_maps, end_map, self.config_manager.get("substitution_map"))
             
             # Save CSV
             csv_path = scraper.save_to_csv(header, data, str(get_data_dir()))

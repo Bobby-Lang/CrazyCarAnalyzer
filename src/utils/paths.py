@@ -13,15 +13,17 @@ def get_project_root():
 
 def get_assets_dir():
     """Returns the assets directory."""
-    root = get_project_root()
-    # In development: src/assets
-    # In dist (if added as data): assets
+    # 1. Check if running as PyInstaller OneFile (sys._MEIPASS exists)
+    if hasattr(sys, '_MEIPASS'):
+        return Path(sys._MEIPASS) / "src" / "assets"
     
-    # Check if we are in dev or dist
+    # 2. Development mode
+    root = get_project_root()
     dev_assets = root / "src" / "assets"
     if dev_assets.exists():
         return dev_assets
         
+    # 3. Fallback
     return root / "assets"
 
 def get_config_dir():

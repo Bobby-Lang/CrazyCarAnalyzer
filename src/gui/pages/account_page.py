@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import tkinter as tk
 from tkinter import messagebox
 from src.utils.config_manager import ConfigManager
 from src.core.scraper import CrazyCarScraper
@@ -20,8 +21,21 @@ class AccountPage(ctk.CTkFrame):
         self.phone_entry = ctk.CTkEntry(self.form_frame, placeholder_text="手机号")
         self.phone_entry.pack(pady=10, padx=20, fill="x")
         
-        self.pwd_entry = ctk.CTkEntry(self.form_frame, placeholder_text="密码", show="*")
-        self.pwd_entry.pack(pady=10, padx=20, fill="x")
+        # 密码输入框 - 使用原生 Entry 并禁用输入法
+        pwd_frame = ctk.CTkFrame(self.form_frame, fg_color="transparent")
+        pwd_frame.pack(pady=10, padx=20, fill="x")
+        
+        ctk.CTkLabel(pwd_frame, text="密码:", width=50).pack(side="left")
+        self.pwd_entry = tk.Entry(pwd_frame, show="*", font=("Consolas", 12))
+        self.pwd_entry.pack(side="left", fill="x", expand=True, ipady=5)
+        
+        # 尝试禁用 IME (Windows)
+        try:
+            import ctypes
+            # WM_IME_SETCONTEXT message to disable IME
+            self.pwd_entry.bind("<FocusIn>", lambda e: self._disable_ime(e.widget))
+        except:
+            pass
         
         self.btn_frame = ctk.CTkFrame(self.form_frame, fg_color="transparent")
         self.btn_frame.pack(pady=10, fill="x")
@@ -92,6 +106,21 @@ class AccountPage(ctk.CTkFrame):
     def set_default(self, idx):
         self.config_manager.set("current_account_idx", idx)
         self.refresh_list()
+
+    def _disable_ime(self, widget):
+        """尝试在 Windows 上禁用输入法"""
+        try:
+            import ctypes
+            hwnd = widget.winfo_id()
+            imm32 = ctypes.windll.imm32
+            # 获取当前输入法上下文
+            himc = imm32.ImmGetContext(hwnd)
+            if himc:
+                # 关闭输入法
+                imm32.ImmSetOpenStatus(himc, False)
+                imm32.ImmReleaseContext(hwnd, himc)
+        except:
+            pass
 
     def test_login(self):
         phone = self.phone_entry.get().strip()
