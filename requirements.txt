@@ -1,0 +1,8 @@
+customtkinter
+pandas
+requests
+beautifulsoup4
+ddddocr
+openpyxl
+pillow
+packaging

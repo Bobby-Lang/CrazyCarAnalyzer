@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+
+# Distribution / Packaging
+dist/
+build/
+*.spec
+
+# IDEs
+.vscode/
+.idea/
+
+# Config (don't commit secrets)
+src/config/user_config.json
+
+# Data & Reports
+*.csv
+*.html
+*.xlsx
