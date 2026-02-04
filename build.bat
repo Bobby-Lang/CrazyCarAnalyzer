@@ -2,7 +2,7 @@
 setlocal
 
 echo ==========================================
-echo      CrazyCarAnalyzer Build Script
+echo      Crazy Crazy_Kart_Analyzer Build Script
 echo      (Using Python 3.11 + Virtual Env)
 echo ==========================================
 
@@ -70,7 +70,7 @@ echo.
 echo ==========================================
 echo [SUCCESS] Build Complete!
 echo The executable is located at:
-echo %~dp0dist\CrazyCarAnalyzer.exe
+echo %~dp0dist\Crazy_Kart_Analyzer.exe
 echo.
 echo Dependencies are installed in:
 echo %~dp0venv
